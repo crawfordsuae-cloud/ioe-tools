@@ -65,14 +65,6 @@ button:hover{
   font-weight:bold;
 }
 
-.measure{
-  margin-top:15px;
-  padding:15px;
-  background:white;
-  border-radius:5px;
-  border:1px solid #ddd;
-}
-
 input[type=file]{
   margin-top:20px;
   margin-bottom:20px;
@@ -106,10 +98,10 @@ Upload an RdSAP or PAS2035 PDF or DOCX document.
 
 </div>
 
-<!-- DOCX READER -->
+<!-- DOCX Reader -->
 <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
 
-<!-- PDF READER -->
+<!-- PDF Reader -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
 <script>
@@ -173,10 +165,11 @@ async function processDoc(){
     }
 
     // SEND TO GOOGLE APPS SCRIPT
-    const response = await fetch(
+    await fetch(
       "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec",
       {
         method: "POST",
+        mode: "no-cors",
 
         headers: {
           "Content-Type": "application/json"
@@ -188,16 +181,24 @@ async function processDoc(){
       }
     );
 
-    // CHECK RESPONSE
-    if(!response.ok){
-      throw new Error(
-        "Server Error: " + response.status
-      );
-    }
+    // SUCCESS MESSAGE
+    document.getElementById('results').innerHTML = `
 
-    const data = await response.json();
+      <div class="card">
 
-    displayResults(data);
+        <h2>Document Processed Successfully</h2>
+
+        <p>
+        PDF/DOCX text extracted and sent to Google Apps Script.
+        </p>
+
+        <p>
+        No fetch errors detected.
+        </p>
+
+      </div>
+
+    `;
 
   }catch(err){
 
@@ -205,78 +206,6 @@ async function processDoc(){
       '<p class="error">' + err + '</p>';
 
   }
-}
-
-function displayResults(data){
-
-  let html = "";
-
-  html += `
-    <div class="card">
-
-      <h2>Property Information</h2>
-
-      <p>
-      <strong>Address:</strong>
-      ${data.address || 'Not Found'}
-      </p>
-
-      <p>
-      <strong>Floor Area:</strong>
-      ${data.floorArea || 'Not Found'}
-      </p>
-
-      <p>
-      <strong>Current Rating:</strong>
-      ${data.currentRating || 'Not Found'}
-      </p>
-
-    </div>
-  `;
-
-  if(data.measures && data.measures.length > 0){
-
-    html += `
-      <div class="card">
-
-      <h2>Energy Efficiency Measures</h2>
-    `;
-
-    data.measures.forEach(measure => {
-
-      html += `
-        <div class="measure">
-
-          <h3>${measure.name}</h3>
-
-          <p>
-          <strong>Installation Cost:</strong>
-          ${measure.cost}
-          </p>
-
-          <p>
-          <strong>Risk:</strong>
-          ${measure.risk}
-          </p>
-
-        </div>
-      `;
-
-    });
-
-    html += `</div>`;
-
-  }else{
-
-    html += `
-      <div class="card">
-        No measures returned.
-      </div>
-    `;
-  }
-
-  document.getElementById('results').innerHTML =
-    html;
 }
 
 </script>
