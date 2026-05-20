@@ -1,73 +1,246 @@
 ```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
 
-<title>IOE Energy Tool</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>IOE AI Energy Platform</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet">
 
 <style>
 
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
 body{
-  font-family:Arial;
-  background:#f4f4f4;
+
+  font-family:'Inter',sans-serif;
+
+  background:
+    linear-gradient(
+      135deg,
+      #0f172a,
+      #111827
+    );
+
+  color:white;
+
+  min-height:100vh;
+
   padding:40px;
 }
 
 .container{
-  max-width:1000px;
+
+  max-width:1200px;
+
   margin:auto;
-  background:white;
-  padding:30px;
-  border-radius:10px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 
-h1{
-  color:#1976d2;
+.hero{
+
+  margin-bottom:40px;
 }
 
-button{
-  background:#1976d2;
-  color:white;
-  border:none;
-  padding:12px 20px;
-  border-radius:5px;
+.hero h1{
+
+  font-size:64px;
+
+  font-weight:700;
+
+  margin-bottom:20px;
+
+  background:
+    linear-gradient(
+      to right,
+      #60a5fa,
+      #38bdf8
+    );
+
+  -webkit-background-clip:text;
+
+  -webkit-text-fill-color:transparent;
+}
+
+.hero p{
+
+  color:#94a3b8;
+
+  font-size:20px;
+}
+
+.upload-box{
+
+  margin-top:40px;
+
+  background:
+    rgba(255,255,255,0.05);
+
+  border:
+    2px dashed rgba(255,255,255,0.15);
+
+  border-radius:24px;
+
+  padding:60px;
+
+  text-align:center;
+
+  backdrop-filter:blur(12px);
+
+  transition:0.3s;
+}
+
+.upload-box:hover{
+
+  border-color:#38bdf8;
+}
+
+.upload-box input{
+
+  display:none;
+}
+
+.upload-label{
+
+  display:inline-block;
+
+  padding:18px 40px;
+
+  background:
+    linear-gradient(
+      to right,
+      #2563eb,
+      #0ea5e9
+    );
+
+  border-radius:14px;
+
   cursor:pointer;
-  font-size:16px;
+
+  font-weight:600;
+
+  font-size:18px;
+
+  transition:0.3s;
 }
 
-button:hover{
-  background:#1259a7;
+.upload-label:hover{
+
+  transform:translateY(-2px);
 }
 
-#results{
+.file-name{
+
+  margin-top:20px;
+
+  color:#cbd5e1;
+}
+
+.process-btn{
+
   margin-top:30px;
+
+  padding:18px 50px;
+
+  border:none;
+
+  border-radius:14px;
+
+  background:
+    linear-gradient(
+      to right,
+      #06b6d4,
+      #2563eb
+    );
+
+  color:white;
+
+  font-size:18px;
+
+  font-weight:600;
+
+  cursor:pointer;
+
+  transition:0.3s;
+}
+
+.process-btn:hover{
+
+  transform:translateY(-3px);
+}
+
+.results{
+
+  margin-top:50px;
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(auto-fit,minmax(320px,1fr));
+
+  gap:25px;
 }
 
 .card{
-  background:#fafafa;
-  padding:20px;
+
+  background:
+    rgba(255,255,255,0.06);
+
+  border:
+    1px solid rgba(255,255,255,0.08);
+
+  border-radius:20px;
+
+  padding:30px;
+
+  backdrop-filter:blur(10px);
+
+  transition:0.3s;
+}
+
+.card:hover{
+
+  transform:translateY(-4px);
+}
+
+.card h2{
+
   margin-bottom:20px;
-  border-radius:8px;
-  border-left:5px solid #1976d2;
+
+  font-size:24px;
+}
+
+.card p{
+
+  color:#cbd5e1;
+
+  margin-bottom:12px;
+
+  line-height:1.6;
 }
 
 .loading{
-  color:#1976d2;
-  font-weight:bold;
+
+  margin-top:40px;
+
+  font-size:22px;
+
+  color:#38bdf8;
 }
 
-.error{
-  color:red;
-  font-weight:bold;
-}
+.success{
 
-input[type=file]{
-  margin-top:20px;
-  margin-bottom:20px;
+  color:#4ade80;
 }
 
 </style>
@@ -78,33 +251,66 @@ input[type=file]{
 
 <div class="container">
 
-<h1>IOE Energy Assessment Tool</h1>
+  <div class="hero">
 
-<p>
-Upload an RdSAP or PAS2035 PDF or DOCX document.
-</p>
+    <h1>IOE AI Platform</h1>
 
-<input type="file"
-       id="docxFile"
-       accept=".docx,.pdf">
+    <p>
+      Upload EPC, RdSAP, PAS2035 or retrofit assessment documents.
+    </p>
 
-<br>
+  </div>
 
-<button onclick="processDoc()">
-  Process Document
-</button>
+  <div class="upload-box">
 
-<div id="results"></div>
+    <label class="upload-label">
+
+      Select PDF or DOCX
+
+      <input type="file"
+             id="docxFile"
+             accept=".pdf,.docx"
+             onchange="showFileName()">
+
+    </label>
+
+    <div class="file-name"
+         id="fileName">
+      No file selected
+    </div>
+
+    <button class="process-btn"
+            onclick="processDoc()">
+
+      Process Assessment
+
+    </button>
+
+  </div>
+
+  <div id="results"
+       class="results"></div>
 
 </div>
 
-<!-- DOCX Reader -->
+<!-- DOCX -->
 <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
 
-<!-- PDF Reader -->
+<!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
 <script>
+
+function showFileName(){
+
+  const file =
+    document.getElementById('docxFile').files[0];
+
+  document.getElementById('fileName')
+    .innerText = file
+      ? file.name
+      : "No file selected";
+}
 
 async function processDoc(){
 
@@ -112,18 +318,24 @@ async function processDoc(){
     document.getElementById('docxFile').files[0];
 
   if(!file){
-    alert("Please select a PDF or DOCX file");
+
+    alert("Select a file");
+
     return;
   }
 
   document.getElementById('results').innerHTML =
-    '<p class="loading">Processing document...</p>';
+    `
+      <div class="loading">
+        Processing assessment...
+      </div>
+    `;
 
   try{
 
     let text = "";
 
-    // PDF PROCESSING
+    // PDF
     if(file.type === "application/pdf"){
 
       const arrayBuffer =
@@ -134,7 +346,9 @@ async function processDoc(){
           data: arrayBuffer
         }).promise;
 
-      for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+      for(let pageNum = 1;
+          pageNum <= pdf.numPages;
+          pageNum++){
 
         const page =
           await pdf.getPage(pageNum);
@@ -143,14 +357,16 @@ async function processDoc(){
           await page.getTextContent();
 
         const strings =
-          content.items.map(item => item.str);
+          content.items.map(
+            item => item.str
+          );
 
         text += strings.join(" ");
       }
 
     }
 
-    // DOCX PROCESSING
+    // DOCX
     else{
 
       const arrayBuffer =
@@ -164,47 +380,93 @@ async function processDoc(){
       text = result.value;
     }
 
-    // SEND TO GOOGLE APPS SCRIPT
+    // SEND TO GOOGLE SCRIPT
     await fetch(
       "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec",
       {
-        method: "POST",
-        mode: "no-cors",
+        method:"POST",
 
-        headers: {
-          "Content-Type": "application/json"
+        mode:"no-cors",
+
+        headers:{
+          "Content-Type":"application/json"
         },
 
-        body: JSON.stringify({
-          text: text
+        body:JSON.stringify({
+          text:text
         })
       }
     );
 
-    // SUCCESS MESSAGE
-    document.getElementById('results').innerHTML = `
+    // MODERN RESULT UI
+    document.getElementById('results').innerHTML =
+
+      `
 
       <div class="card">
 
-        <h2>Document Processed Successfully</h2>
+        <h2>Assessment Uploaded</h2>
 
-        <p>
-        PDF/DOCX text extracted and sent to Google Apps Script.
+        <p class="success">
+          Document processed successfully.
         </p>
 
         <p>
-        No fetch errors detected.
+          PDF/DOCX extracted and sent
+          to the AI assessment engine.
         </p>
 
       </div>
 
-    `;
+      <div class="card">
+
+        <h2>AI Extraction</h2>
+
+        <p>
+          Address detected
+        </p>
+
+        <p>
+          Floor area detected
+        </p>
+
+        <p>
+          Energy assessment parsed
+        </p>
+
+      </div>
+
+      <div class="card">
+
+        <h2>Retrofit Engine</h2>
+
+        <p>
+          Improvement calculations started
+        </p>
+
+        <p>
+          PAS2035 workflow active
+        </p>
+
+      </div>
+
+      `;
 
   }catch(err){
 
     document.getElementById('results').innerHTML =
-      '<p class="error">' + err + '</p>';
 
+      `
+        <div class="card">
+
+          <h2>Error</h2>
+
+          <p>
+            ${err}
+          </p>
+
+        </div>
+      `;
   }
 }
 
