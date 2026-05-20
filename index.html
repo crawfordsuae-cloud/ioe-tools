@@ -57,7 +57,6 @@ body{
   border-radius:24px;
   padding:50px;
   text-align:center;
-  margin-top:40px;
 }
 
 .upload input{
@@ -190,43 +189,15 @@ async function processDocument(){
       </div>
     `;
 
-  // REAL API CALL
-  const response = await fetch(
-    "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec"
+  // TEST API
+  await fetch(
+    "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec",
+    {
+      mode:"no-cors"
+    }
   );
 
-  const data = await response.json();
-
-  let measuresHtml = "";
-
-  data.measures.forEach(measure => {
-
-    measuresHtml += `
-
-      <div class="measure">
-
-        <input type="checkbox"
-               onchange="
-                 calculateMeasure(
-                   ${measure.cost},
-                   ${measure.sap},
-                   ${measure.carbon}
-                 )
-               ">
-
-        <label>
-
-          ${measure.name}
-
-          (£${measure.cost})
-
-        </label>
-
-      </div>
-
-    `;
-  });
-
+  // SHOW RESULTS
   document.getElementById("dashboard")
     .innerHTML = `
 
@@ -234,17 +205,35 @@ async function processDocument(){
 
         <h2>Property Details</h2>
 
-        <p>Address: ${data.address}</p>
+        <p>
+          Address:
+          21 Example Street
+        </p>
 
-        <p>Floor Area: ${data.floorArea}</p>
+        <p>
+          Floor Area:
+          92 m²
+        </p>
 
-        <p>EPC Rating: ${data.currentRating}</p>
+        <p>
+          EPC Rating:
+          E
+        </p>
 
-        <p>Walls: ${data.walls}</p>
+        <p>
+          Walls:
+          Solid brick walls
+        </p>
 
-        <p>Roof: ${data.roof}</p>
+        <p>
+          Roof:
+          Loft insulation required
+        </p>
 
-        <p>Heating: ${data.heating}</p>
+        <p>
+          Heating:
+          Gas boiler
+        </p>
 
       </div>
 
@@ -252,7 +241,56 @@ async function processDocument(){
 
         <h2>Recommended Measures</h2>
 
-        ${measuresHtml}
+        <div class="measure">
+
+          <input type="checkbox"
+                 onchange="
+                   calculateMeasure(
+                     1200,
+                     8,
+                     0.4
+                   )
+                 ">
+
+          <label>
+            Loft Insulation (£1,200)
+          </label>
+
+        </div>
+
+        <div class="measure">
+
+          <input type="checkbox"
+                 onchange="
+                   calculateMeasure(
+                     6500,
+                     14,
+                     1.8
+                   )
+                 ">
+
+          <label>
+            Solar PV (£6,500)
+          </label>
+
+        </div>
+
+        <div class="measure">
+
+          <input type="checkbox"
+                 onchange="
+                   calculateMeasure(
+                     11000,
+                     20,
+                     2.6
+                   )
+                 ">
+
+          <label>
+            Air Source Heat Pump (£11,000)
+          </label>
+
+        </div>
 
       </div>
 
