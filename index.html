@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,7 +8,7 @@
 <meta name="viewport"
       content="width=device-width, initial-scale=1.0">
 
-<title>IOE AI Energy Platform</title>
+<title>IOE AI Retrofit Platform</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet">
@@ -29,8 +28,8 @@ body{
   background:
     linear-gradient(
       135deg,
-      #0f172a,
-      #111827
+      #020617,
+      #0f172a
     );
 
   color:white;
@@ -42,7 +41,7 @@ body{
 
 .container{
 
-  max-width:1200px;
+  max-width:1400px;
 
   margin:auto;
 }
@@ -56,15 +55,13 @@ body{
 
   font-size:64px;
 
-  font-weight:700;
-
   margin-bottom:20px;
 
   background:
     linear-gradient(
       to right,
-      #60a5fa,
-      #38bdf8
+      #38bdf8,
+      #2563eb
     );
 
   -webkit-background-clip:text;
@@ -79,9 +76,7 @@ body{
   font-size:20px;
 }
 
-.upload-box{
-
-  margin-top:40px;
+.upload{
 
   background:
     rgba(255,255,255,0.05);
@@ -91,30 +86,25 @@ body{
 
   border-radius:24px;
 
-  padding:60px;
+  padding:50px;
 
   text-align:center;
 
-  backdrop-filter:blur(12px);
-
-  transition:0.3s;
+  margin-top:40px;
 }
 
-.upload-box:hover{
-
-  border-color:#38bdf8;
-}
-
-.upload-box input{
+.upload input{
 
   display:none;
 }
 
-.upload-label{
+.upload label{
 
   display:inline-block;
 
   padding:18px 40px;
+
+  border-radius:14px;
 
   background:
     linear-gradient(
@@ -123,32 +113,16 @@ body{
       #0ea5e9
     );
 
-  border-radius:14px;
-
   cursor:pointer;
-
-  font-weight:600;
 
   font-size:18px;
 
-  transition:0.3s;
-}
-
-.upload-label:hover{
-
-  transform:translateY(-2px);
-}
-
-.file-name{
-
-  margin-top:20px;
-
-  color:#cbd5e1;
+  font-weight:600;
 }
 
 .process-btn{
 
-  margin-top:30px;
+  margin-top:25px;
 
   padding:18px 50px;
 
@@ -167,26 +141,17 @@ body{
 
   font-size:18px;
 
-  font-weight:600;
-
   cursor:pointer;
-
-  transition:0.3s;
 }
 
-.process-btn:hover{
-
-  transform:translateY(-3px);
-}
-
-.results{
+.dashboard{
 
   margin-top:50px;
 
   display:grid;
 
   grid-template-columns:
-    repeat(auto-fit,minmax(320px,1fr));
+    repeat(auto-fit,minmax(350px,1fr));
 
   gap:25px;
 }
@@ -202,45 +167,46 @@ body{
   border-radius:20px;
 
   padding:30px;
-
-  backdrop-filter:blur(10px);
-
-  transition:0.3s;
-}
-
-.card:hover{
-
-  transform:translateY(-4px);
 }
 
 .card h2{
 
   margin-bottom:20px;
-
-  font-size:24px;
 }
 
 .card p{
 
-  color:#cbd5e1;
-
   margin-bottom:12px;
 
-  line-height:1.6;
+  color:#cbd5e1;
 }
 
-.loading{
+.measure{
 
-  margin-top:40px;
+  background:
+    rgba(255,255,255,0.05);
 
-  font-size:22px;
+  border-radius:14px;
 
-  color:#38bdf8;
+  padding:20px;
+
+  margin-bottom:15px;
 }
 
-.success{
+.measure label{
+
+  font-size:18px;
+
+  font-weight:600;
+}
+
+.total{
+
+  font-size:28px;
 
   color:#4ade80;
+
+  margin-top:20px;
 }
 
 </style>
@@ -253,225 +219,285 @@ body{
 
   <div class="hero">
 
-    <h1>IOE AI Platform</h1>
+    <h1>IOE AI Retrofit Platform</h1>
 
     <p>
-      Upload EPC, RdSAP, PAS2035 or retrofit assessment documents.
+      EPC • RdSAP • PAS2035 • Retrofit Calculations
     </p>
 
   </div>
 
-  <div class="upload-box">
+  <div class="upload">
 
-    <label class="upload-label">
+    <label>
 
-      Select PDF or DOCX
+      Upload PDF/DOCX
 
       <input type="file"
-             id="docxFile"
-             accept=".pdf,.docx"
-             onchange="showFileName()">
+             id="fileInput"
+             accept=".pdf,.docx">
 
     </label>
 
-    <div class="file-name"
-         id="fileName">
-      No file selected
-    </div>
+    <br>
 
     <button class="process-btn"
-            onclick="processDoc()">
+            onclick="processDocument()">
 
-      Process Assessment
+      Analyse Property
 
     </button>
 
   </div>
 
-  <div id="results"
-       class="results"></div>
+  <div class="dashboard"
+       id="dashboard">
+
+  </div>
 
 </div>
 
-<!-- DOCX -->
-<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
-
-<!-- PDF -->
+<!-- PDF READER -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<!-- DOCX READER -->
+<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
 
 <script>
 
-function showFileName(){
+let totalCost = 0;
+let totalSap = 0;
+let totalCarbon = 0;
+
+async function processDocument(){
 
   const file =
-    document.getElementById('docxFile').files[0];
-
-  document.getElementById('fileName')
-    .innerText = file
-      ? file.name
-      : "No file selected";
-}
-
-async function processDoc(){
-
-  const file =
-    document.getElementById('docxFile').files[0];
+    document.getElementById(
+      "fileInput"
+    ).files[0];
 
   if(!file){
 
-    alert("Select a file");
+    alert("Please select a file");
 
     return;
   }
 
-  document.getElementById('results').innerHTML =
-    `
-      <div class="loading">
-        Processing assessment...
-      </div>
-    `;
+  document.getElementById(
+    "dashboard"
+  ).innerHTML = `
 
-  try{
+    <div class="card">
 
-    let text = "";
+      <h2>Processing Document...</h2>
 
-    // PDF
-    if(file.type === "application/pdf"){
+      <p>
+        Extracting EPC/RdSAP data
+      </p>
 
-      const arrayBuffer =
-        await file.arrayBuffer();
+    </div>
 
-      const pdf =
-        await pdfjsLib.getDocument({
-          data: arrayBuffer
-        }).promise;
+  `;
 
-      for(let pageNum = 1;
-          pageNum <= pdf.numPages;
-          pageNum++){
+  let text = "";
 
-        const page =
-          await pdf.getPage(pageNum);
+  // PDF
+  if(file.type === "application/pdf"){
 
-        const content =
-          await page.getTextContent();
+    const arrayBuffer =
+      await file.arrayBuffer();
 
-        const strings =
-          content.items.map(
-            item => item.str
-          );
+    const pdf =
+      await pdfjsLib.getDocument({
+        data: arrayBuffer
+      }).promise;
 
-        text += strings.join(" ");
-      }
+    for(let pageNum = 1;
+        pageNum <= pdf.numPages;
+        pageNum++){
 
+      const page =
+        await pdf.getPage(pageNum);
+
+      const content =
+        await page.getTextContent();
+
+      const strings =
+        content.items.map(
+          item => item.str
+        );
+
+      text += strings.join(" ");
     }
 
-    // DOCX
-    else{
-
-      const arrayBuffer =
-        await file.arrayBuffer();
-
-      const result =
-        await mammoth.extractRawText({
-          arrayBuffer: arrayBuffer
-        });
-
-      text = result.value;
-    }
-
-    // SEND TO GOOGLE SCRIPT
-    await fetch(
-      "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec",
-      {
-        method:"POST",
-
-        mode:"no-cors",
-
-        headers:{
-          "Content-Type":"application/json"
-        },
-
-        body:JSON.stringify({
-          text:text
-        })
-      }
-    );
-
-    // MODERN RESULT UI
-    document.getElementById('results').innerHTML =
-
-      `
-
-      <div class="card">
-
-        <h2>Assessment Uploaded</h2>
-
-        <p class="success">
-          Document processed successfully.
-        </p>
-
-        <p>
-          PDF/DOCX extracted and sent
-          to the AI assessment engine.
-        </p>
-
-      </div>
-
-      <div class="card">
-
-        <h2>AI Extraction</h2>
-
-        <p>
-          Address detected
-        </p>
-
-        <p>
-          Floor area detected
-        </p>
-
-        <p>
-          Energy assessment parsed
-        </p>
-
-      </div>
-
-      <div class="card">
-
-        <h2>Retrofit Engine</h2>
-
-        <p>
-          Improvement calculations started
-        </p>
-
-        <p>
-          PAS2035 workflow active
-        </p>
-
-      </div>
-
-      `;
-
-  }catch(err){
-
-    document.getElementById('results').innerHTML =
-
-      `
-        <div class="card">
-
-          <h2>Error</h2>
-
-          <p>
-            ${err}
-          </p>
-
-        </div>
-      `;
   }
+
+  // DOCX
+  else{
+
+    const arrayBuffer =
+      await file.arrayBuffer();
+
+    const result =
+      await mammoth.extractRawText({
+        arrayBuffer: arrayBuffer
+      });
+
+    text = result.value;
+  }
+
+  // SEND TO GOOGLE SCRIPT
+  const response = await fetch(
+    "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec",
+    {
+      method:"POST",
+
+      mode:"cors",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+        text:text
+      })
+    }
+  );
+
+  const data =
+    await response.json();
+
+  let measuresHtml = "";
+
+  data.measures.forEach(measure => {
+
+    measuresHtml += `
+
+      <div class="measure">
+
+        <input type="checkbox"
+               onchange="
+                 calculateMeasure(
+                   ${measure.cost},
+                   ${measure.sap},
+                   ${measure.carbon}
+                 )
+               ">
+
+        <label>
+
+          ${measure.name}
+
+          (£${measure.cost})
+
+        </label>
+
+      </div>
+
+    `;
+  });
+
+  document.getElementById(
+    "dashboard"
+  ).innerHTML = `
+
+    <div class="card">
+
+      <h2>Property Details</h2>
+
+      <p>
+        Address:
+        ${data.address}
+      </p>
+
+      <p>
+        Floor Area:
+        ${data.floorArea}
+      </p>
+
+      <p>
+        EPC Rating:
+        ${data.currentRating}
+      </p>
+
+      <p>
+        Walls:
+        ${data.walls}
+      </p>
+
+      <p>
+        Roof:
+        ${data.roof}
+      </p>
+
+      <p>
+        Heating:
+        ${data.heating}
+      </p>
+
+    </div>
+
+    <div class="card">
+
+      <h2>Recommended Measures</h2>
+
+      ${measuresHtml}
+
+    </div>
+
+    <div class="card">
+
+      <h2>Retrofit Calculation</h2>
+
+      <div id="calcResults">
+
+        Select measures to calculate.
+
+      </div>
+
+    </div>
+
+  `;
+}
+
+function calculateMeasure(
+  cost,
+  sap,
+  carbon
+){
+
+  totalCost += cost;
+
+  totalSap += sap;
+
+  totalCarbon += carbon;
+
+  document.getElementById(
+    "calcResults"
+  ).innerHTML = `
+
+    <p>
+      SAP Improvement:
+      +${totalSap}
+    </p>
+
+    <p>
+      Carbon Reduction:
+      ${totalCarbon.toFixed(1)}
+      tonnes CO₂
+    </p>
+
+    <div class="total">
+
+      Total Cost:
+      £${totalCost.toLocaleString()}
+
+    </div>
+
+  `;
 }
 
 </script>
 
 </body>
 </html>
-```
