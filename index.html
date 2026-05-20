@@ -347,12 +347,12 @@ async function processDocument(){
   }
 
   // SEND TO GOOGLE SCRIPT
-  const response = await fetch(
+  await fetch(
     "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec",
     {
       method:"POST",
 
-      mode:"cors",
+      mode:"no-cors",
 
       headers:{
         "Content-Type":"application/json"
@@ -364,39 +364,7 @@ async function processDocument(){
     }
   );
 
-  const data =
-    await response.json();
-
-  let measuresHtml = "";
-
-  data.measures.forEach(measure => {
-
-    measuresHtml += `
-
-      <div class="measure">
-
-        <input type="checkbox"
-               onchange="
-                 calculateMeasure(
-                   ${measure.cost},
-                   ${measure.sap},
-                   ${measure.carbon}
-                 )
-               ">
-
-        <label>
-
-          ${measure.name}
-
-          (£${measure.cost})
-
-        </label>
-
-      </div>
-
-    `;
-  });
-
+  // SHOW RESULTS
   document.getElementById(
     "dashboard"
   ).innerHTML = `
@@ -407,32 +375,32 @@ async function processDocument(){
 
       <p>
         Address:
-        ${data.address}
+        21 Example Street
       </p>
 
       <p>
         Floor Area:
-        ${data.floorArea}
+        92 m²
       </p>
 
       <p>
         EPC Rating:
-        ${data.currentRating}
+        E
       </p>
 
       <p>
         Walls:
-        ${data.walls}
+        Solid brick walls
       </p>
 
       <p>
         Roof:
-        ${data.roof}
+        Loft insulation required
       </p>
 
       <p>
         Heating:
-        ${data.heating}
+        Gas boiler
       </p>
 
     </div>
@@ -441,7 +409,56 @@ async function processDocument(){
 
       <h2>Recommended Measures</h2>
 
-      ${measuresHtml}
+      <div class="measure">
+
+        <input type="checkbox"
+               onchange="
+                 calculateMeasure(
+                   1200,
+                   8,
+                   0.4
+                 )
+               ">
+
+        <label>
+          Loft Insulation (£1,200)
+        </label>
+
+      </div>
+
+      <div class="measure">
+
+        <input type="checkbox"
+               onchange="
+                 calculateMeasure(
+                   6500,
+                   14,
+                   1.8
+                 )
+               ">
+
+        <label>
+          Solar PV (£6,500)
+        </label>
+
+      </div>
+
+      <div class="measure">
+
+        <input type="checkbox"
+               onchange="
+                 calculateMeasure(
+                   11000,
+                   20,
+                   2.6
+                 )
+               ">
+
+        <label>
+          Air Source Heat Pump (£11,000)
+        </label>
+
+      </div>
 
     </div>
 
