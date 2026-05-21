@@ -1,3 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>RdSAP Extractor</title>
+
+<style>
+
+body{
+  background:#08133a;
+  color:white;
+  font-family:Arial;
+  padding:40px;
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+}
+
+button{
+  background:#2d6cff;
+  color:white;
+  border:none;
+  padding:18px 40px;
+  border-radius:12px;
+  font-size:24px;
+  cursor:pointer;
+  margin-top:20px;
+}
+
+.results{
+  margin-top:50px;
+  background:#0d1b52;
+  padding:40px;
+  border-radius:20px;
+}
+
+.results p{
+  font-size:26px;
+  margin:30px 0;
+}
+
+h1{
+  font-size:60px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>
+Upload Existing RdSAP Summary Worksheet or PAS2035 Assessment
+</h1>
+
+<input
+  type="file"
+  id="fileInput"
+  accept=".pdf"
+/>
+
+<br>
+
+<button onclick="processDocument()">
+Process Document
+</button>
+
 <div class="results">
 
 <h1>Property Details</h1>
@@ -48,3 +122,202 @@
 </p>
 
 </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<script>
+
+async function processDocument() {
+
+  const fileInput =
+    document.getElementById("fileInput");
+
+  const file =
+    fileInput.files[0];
+
+  if (!file) {
+    alert("Choose a PDF");
+    return;
+  }
+
+  const arrayBuffer =
+    await file.arrayBuffer();
+
+  const pdf =
+    await pdfjsLib.getDocument({
+      data: arrayBuffer
+    }).promise;
+
+  let text = "";
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+
+    const page =
+      await pdf.getPage(i);
+
+    const content =
+      await page.getTextContent();
+
+    text +=
+      content.items
+        .map(item => item.str)
+        .join(" ");
+
+  }
+
+  console.log(text);
+
+  // ADDRESS
+  const houseNo =
+    extract(text, /House No:\s*([^\n]+)/i);
+
+  const street =
+    extract(text, /Street:\s*([^\n]+)/i);
+
+  const town =
+    extract(text, /Town:\s*([^\n]+)/i);
+
+  const postcodeMatch =
+    text.match(
+      /([A-Z]{1,2}[0-9]{1,2}\s?[0-9][A-Z]{2})/i
+    );
+
+  const postcode =
+    postcodeMatch
+      ? postcodeMatch[1]
+      : "";
+
+  const address =
+    `${houseNo} ${street} ${town} ${postcode}`
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // FLOOR AREA
+  const floorMatch =
+    text.match(
+      /1st Floor:\s*([0-9.]+)/i
+    );
+
+  const totalFloorArea =
+    floorMatch
+      ? (parseFloat(floorMatch[1]) * 2).toFixed(2)
+      : "0";
+
+  // ROOM HEIGHT
+  const roomMatch =
+    text.match(
+      /1st Floor:\s*[0-9.]+\s*([0-9.]+)/i
+    );
+
+  const roomHeight =
+    roomMatch
+      ? roomMatch[1]
+      : "0";
+
+  // HEAT LOSS
+  const heatMatch =
+    text.match(
+      /1st Floor:\s*[0-9.]+\s*[0-9.]+\s*([0-9.]+)/i
+    );
+
+  const heatLoss =
+    heatMatch
+      ? heatMatch[1]
+      : "0";
+
+  // WINDOW AREA
+  const windowMatches =
+    [...text.matchAll(/([0-9.]+)\s+Double between/gi)];
+
+  const windowArea =
+    windowMatches.length
+      ? windowMatches
+          .reduce((sum, m) =>
+            sum + parseFloat(m[1]), 0)
+          .toFixed(2)
+      : "0";
+
+  // ROOF AREA
+  const roofArea =
+    totalFloorArea;
+
+  // FUEL COST
+  const fuelMatch =
+    text.match(
+      /Fuel Bill\s*£?([0-9.]+)/i
+    );
+
+  const fuelCost =
+    fuelMatch
+      ? fuelMatch[1]
+      : "0";
+
+  // CARBON
+  const carbonMatch =
+    text.match(
+      /Emissions \(t\/year\)[:\s]*([0-9.]+)/i
+    );
+
+  const carbon =
+    carbonMatch
+      ? carbonMatch[1]
+      : "0";
+
+  // SAP RATING
+  const ratingMatch =
+    text.match(
+      /Current SAP rating[:\s]*([A-Z]\s*[0-9]+)/i
+    );
+
+  const rating =
+    ratingMatch
+      ? ratingMatch[1]
+      : "-";
+
+  // UPDATE SCREEN
+  document.getElementById("address").innerText =
+    address;
+
+  document.getElementById("floorArea").innerText =
+    totalFloorArea;
+
+  document.getElementById("heatLoss").innerText =
+    heatLoss;
+
+  document.getElementById("roomHeight").innerText =
+    roomHeight;
+
+  document.getElementById("roofArea").innerText =
+    roofArea;
+
+  document.getElementById("windowArea").innerText =
+    windowArea;
+
+  document.getElementById("fuelCost").innerText =
+    fuelCost;
+
+  document.getElementById("carbon").innerText =
+    carbon;
+
+  document.getElementById("rating").innerText =
+    rating;
+
+}
+
+function extract(text, regex) {
+
+  const match =
+    text.match(regex);
+
+  return match
+    ? match[1].trim()
+    : "";
+
+}
+
+</script>
+
+</body>
+</html>
