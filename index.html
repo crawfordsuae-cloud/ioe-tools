@@ -1,267 +1,357 @@
-export default {
+<!DOCTYPE html>
+<html lang="en">
 
-  async fetch(request) {
+<head>
 
-    if(request.method === "OPTIONS"){
+<meta charset="UTF-8">
 
-      return new Response(null,{
-        headers:cors()
-      });
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>IOE Energy Assessment Tool</title>
+
+<style>
+
+body{
+  margin:0;
+  padding:40px;
+  background:#050816;
+  color:white;
+  font-family:Arial,sans-serif;
+}
+
+.container{
+  max-width:1400px;
+  margin:auto;
+}
+
+h1{
+  font-size:52px;
+  margin-bottom:10px;
+}
+
+.subtitle{
+  color:#9aa4bf;
+  font-size:20px;
+  margin-bottom:40px;
+}
+
+.upload-box{
+  background:#11182d;
+  border:1px solid #1f2b4d;
+  border-radius:20px;
+  padding:40px;
+  margin-bottom:40px;
+}
+
+button{
+  margin-top:20px;
+  background:#2563eb;
+  color:white;
+  border:none;
+  padding:16px 30px;
+  border-radius:12px;
+  font-size:18px;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#1d4ed8;
+}
+
+.card{
+  background:#11182d;
+  border:1px solid #1f2b4d;
+  border-radius:20px;
+  padding:30px;
+  margin-bottom:30px;
+}
+
+.measure{
+  background:#1a2442;
+  border-radius:16px;
+  padding:20px;
+  margin-top:20px;
+}
+
+.loading{
+  color:#60a5fa;
+  font-size:22px;
+}
+
+.error{
+  color:red;
+}
+
+input,select{
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  margin-top:10px;
+  width:100%;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>IOE Energy Assessment Tool</h1>
+
+<p class="subtitle">
+
+Upload Existing RdSAP Summary Worksheet or PAS2035 Assessment
+
+</p>
+
+<div class="upload-box">
+
+<input type="file" id="fileInput">
+
+<br>
+
+<button onclick="uploadDocument()">
+
+Process Document
+
+</button>
+
+</div>
+
+<div id="results"></div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<script>
+
+async function uploadDocument(){
+
+  const file =
+    document.getElementById(
+      "fileInput"
+    ).files[0];
+
+  if(!file){
+
+    alert("Select PDF");
+
+    return;
+  }
+
+  document.getElementById(
+    "results"
+  ).innerHTML = `
+
+    <div class="card">
+
+      <h2>Processing...</h2>
+
+      <p class="loading">
+
+        Extracting RdSAP data
+
+      </p>
+
+    </div>
+
+  `;
+
+  try{
+
+    const arrayBuffer =
+      await file.arrayBuffer();
+
+    const pdf =
+      await pdfjsLib.getDocument({
+        data:arrayBuffer
+      }).promise;
+
+    let extractedText = "";
+
+    for(let page = 1;
+        page <= pdf.numPages;
+        page++){
+
+      const currentPage =
+        await pdf.getPage(page);
+
+      const textContent =
+        await currentPage.getTextContent();
+
+      const strings =
+        textContent.items.map(
+          item => item.str
+        );
+
+      extractedText +=
+        strings.join(" ");
 
     }
 
-    if(request.method !== "POST"){
-
-      return json({
-        status:"API Running"
-      });
-
-    }
-
-    const body =
-      await request.json();
-
-    const text =
-      body.text || "";
-
-    const address =
-      extract(
-        text,
-        /Address[:\s]+(.+)/i
-      );
-
-    const totalFloorArea =
-      extract(
-        text,
-        /total floor area[:\s]+([0-9.]+)/i
-      );
-
-    const heatLossPerimeter =
-      extract(
-        text,
-        /heat loss perimeter[:\s]+([0-9.]+)/i
-      );
-
-    const roomHeight =
-      extract(
-        text,
-        /room height[:\s]+([0-9.]+)/i
-      );
-
-    const roofArea =
-      extract(
-        text,
-        /roof area[:\s]+([0-9.]+)/i
-      );
-
-    const windowArea =
-      extract(
-        text,
-        /window area[:\s]+([0-9.]+)/i
-      );
-
-    const partyWallPerimeter =
-      extract(
-        text,
-        /party wall perimeter[:\s]+([0-9.]+)/i
-      );
-
-    const flatRoofArea =
-      extract(
-        text,
-        /flat roof area[:\s]+([0-9.]+)/i
-      );
-
-    const doors =
-      extract(
-        text,
-        /number of doors[:\s]+([0-9.]+)/i
-      );
-
-    const currentFuelCost =
-      extract(
-        text,
-        /current fuel cost[:\s£]+([0-9.]+)/i
-      );
-
-    const currentCarbon =
-      extract(
-        text,
-        /current carbon[:\s]+([0-9.]+)/i
-      );
-
-    const currentRating =
-      extract(
-        text,
-        /current rating[:\s]+([A-Z])/i
-      );
-
-    const heatDemand =
-      extract(
-        text,
-        /space heating per m2[:\s]+([0-9.]+)/i
-      );
-
-    const loftCost =
-      Number(totalFloorArea || 0)
-      * 12.5;
-
-    const cavityCost =
-      Number(heatLossPerimeter || 0)
-      * Number(roomHeight || 0)
-      * 11.5;
-
-    const solarCost =
-      3250;
-
-    return json({
-
-      address,
-
-      totalFloorArea,
-
-      heatLossPerimeter,
-
-      roomHeight,
-
-      roofArea,
-
-      windowArea,
-
-      partyWallPerimeter,
-
-      flatRoofArea,
-
-      doors,
-
-      currentFuelCost,
-
-      currentCarbon,
-
-      currentRating,
-
-      heatDemand,
-
-      tenure:
-        "Social Housing",
-
-      listedBuilding:
-        "No",
-
-      worldHeritage:
-        "No",
-
-      measures:[
-
+    const response =
+      await fetch(
+        "https://holy-base-2564.crawfordsuae.workers.dev",
         {
+          method:"POST",
 
-          name:
-            "Loft Insulation",
+          headers:{
+            "Content-Type":"application/json"
+          },
 
-          cost:
-            loftCost.toFixed(2),
-
-          risk:
-            "Risk Minor",
-
-          additional:[
-            "PIBI",
-            "Damp Survey"
-          ]
-
-        },
-
-        {
-
-          name:
-            "Cavity Wall Insulation",
-
-          cost:
-            cavityCost.toFixed(2),
-
-          risk:
-            "Risk Minor",
-
-          additional:[
-            "PIBI",
-            "BBA Cavity Wall Survey"
-          ]
-
-        },
-
-        {
-
-          name:
-            "Solar Photovoltaics",
-
-          cost:
-            solarCost.toFixed(2),
-
-          risk:
-            "Risk None",
-
-          additional:[
-            "PIBI",
-            "MCS"
-          ]
-
+          body:JSON.stringify({
+            text:extractedText
+          })
         }
+      );
 
-      ]
+    const data =
+      await response.json();
 
-    });
+    document.title =
+      data.address ||
+      "IOE Assessment";
+
+    document.getElementById(
+      "results"
+    ).innerHTML = `
+
+      <div class="card">
+
+        <h2>Property Details</h2>
+
+        <p><strong>Address:</strong>
+        ${data.address || "Not Found"}</p>
+
+        <p><strong>Total Floor Area:</strong>
+        ${data.totalFloorArea || "0"} m²</p>
+
+        <p><strong>Heat Loss Perimeter:</strong>
+        ${data.heatLossPerimeter || "0"} m</p>
+
+        <p><strong>Room Height:</strong>
+        ${data.roomHeight || "0"} m</p>
+
+        <p><strong>Roof Area:</strong>
+        ${data.roofArea || "0"} m²</p>
+
+        <p><strong>Window Area:</strong>
+        ${data.windowArea || "0"} m²</p>
+
+        <p><strong>Current Fuel Cost:</strong>
+        £${data.currentFuelCost || "0"}</p>
+
+        <p><strong>Current Carbon:</strong>
+        ${data.currentCarbon || "0"} T</p>
+
+        <p><strong>Current Rating:</strong>
+        ${data.currentRating || "-"}</p>
+
+      </div>
+
+      <div class="card">
+
+        <h2>Select Measure</h2>
+
+        <select id="measureSelect">
+
+          ${
+            data.measures.map(
+              (measure,index)=>`
+
+              <option value="${index}">
+
+                ${measure.name}
+
+              </option>
+
+            `
+            ).join("")
+          }
+
+        </select>
+
+        <button onclick='showMeasure(${JSON.stringify(data.measures)})'>
+
+          Calculate
+
+        </button>
+
+      </div>
+
+      <div id="measureResults"></div>
+
+    `;
 
   }
 
-};
+  catch(error){
 
-function extract(text, regex){
+    document.getElementById(
+      "results"
+    ).innerHTML = `
 
-  const match =
-    text.match(regex);
+      <div class="card">
 
-  return match
-    ? match[1]
-    : "";
+        <h2>Backend Error</h2>
 
-}
+        <p class="error">
 
-function json(data){
+          ${error}
 
-  return new Response(
+        </p>
 
-    JSON.stringify(data),
+      </div>
 
-    {
-
-      headers:{
-
-        "Content-Type":
-          "application/json",
-
-        ...cors()
-
-      }
-
-    }
-
-  );
+    `;
+  }
 
 }
 
-function cors(){
+function showMeasure(measures){
 
-  return {
+  const index =
+    document.getElementById(
+      "measureSelect"
+    ).value;
 
-    "Access-Control-Allow-Origin":
-      "*",
+  const measure =
+    measures[index];
 
-    "Access-Control-Allow-Methods":
-      "GET,POST,OPTIONS",
+  document.getElementById(
+    "measureResults"
+  ).innerHTML = `
 
-    "Access-Control-Allow-Headers":
-      "Content-Type"
+    <div class="card">
 
-  };
+      <h2>
+      ${measure.name}
+      </h2>
 
+      <p>
+      <strong>Total Installation Cost:</strong>
+      £${measure.cost}
+      </p>
+
+      <p>
+      <strong>${measure.risk}</strong>
+      </p>
+
+      <p>
+      <strong>Additional Information Required:</strong>
+      ${measure.additional.join(", ")}
+      </p>
+
+    </div>
+
+  `;
 }
+
+</script>
+
+</body>
+
+</html>
