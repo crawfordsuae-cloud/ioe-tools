@@ -1,93 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
 
 <meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>IOE Energy Assessment Tool</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
 
 body{
-  margin:0;
-  padding:40px;
-  background:#050816;
+  background:#020b2d;
   color:white;
-  font-family:Arial,sans-serif;
+  font-family:Arial;
+  padding:40px;
 }
 
-.container{
-  max-width:1400px;
-  margin:auto;
+.card{
+  background:#0d173d;
+  border-radius:20px;
+  padding:40px;
+  margin-bottom:30px;
+}
+
+button{
+  background:#2f6df6;
+  color:white;
+  border:none;
+  padding:20px 40px;
+  border-radius:15px;
+  font-size:30px;
+  cursor:pointer;
 }
 
 h1{
   font-size:52px;
-  margin-bottom:10px;
 }
 
-.subtitle{
-  color:#9aa4bf;
-  font-size:20px;
-  margin-bottom:40px;
+h2{
+  font-size:42px;
 }
 
-.upload-box{
-  background:#11182d;
-  border:1px solid #1f2b4d;
-  border-radius:20px;
-  padding:40px;
-  margin-bottom:40px;
-}
-
-button{
-  margin-top:20px;
-  background:#2563eb;
-  color:white;
-  border:none;
-  padding:16px 30px;
-  border-radius:12px;
-  font-size:18px;
-  cursor:pointer;
-}
-
-button:hover{
-  background:#1d4ed8;
-}
-
-.card{
-  background:#11182d;
-  border:1px solid #1f2b4d;
-  border-radius:20px;
-  padding:30px;
-  margin-bottom:30px;
-}
-
-.measure{
-  background:#1a2442;
-  border-radius:16px;
-  padding:20px;
-  margin-top:20px;
-}
-
-.loading{
-  color:#60a5fa;
-  font-size:22px;
-}
-
-.error{
-  color:red;
-}
-
-input,select{
-  padding:12px;
-  border-radius:10px;
-  border:none;
-  margin-top:10px;
-  width:100%;
+p{
+  font-size:32px;
+  line-height:1.8;
 }
 
 </style>
@@ -96,69 +52,51 @@ input,select{
 
 <body>
 
-<div class="container">
+<div class="card">
 
-<h1>IOE Energy Assessment Tool</h1>
-
-<p class="subtitle">
-
+<h1>
 Upload Existing RdSAP Summary Worksheet or PAS2035 Assessment
+</h1>
 
-</p>
+<br><br>
 
-<div class="upload-box">
+<input type="file" id="file">
 
-<input type="file" id="fileInput">
+<br><br><br>
 
-<br>
-
-<button onclick="uploadDocument()">
-
+<button onclick="processDocument()">
 Process Document
-
 </button>
 
 </div>
 
-<div id="results"></div>
+<div class="card" id="results">
+
+<h2>Property Details</h2>
+
+<p id="address"></p>
+<p id="floor"></p>
+<p id="heat"></p>
+<p id="room"></p>
+<p id="roof"></p>
+<p id="window"></p>
+<p id="fuel"></p>
+<p id="carbon"></p>
+<p id="rating"></p>
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-
 <script>
 
-async function uploadDocument(){
+async function processDocument(){
 
   const file =
-    document.getElementById(
-      "fileInput"
-    ).files[0];
+    document.getElementById("file").files[0];
 
   if(!file){
-
-    alert("Select PDF");
-
+    alert("Choose PDF");
     return;
   }
-
-  document.getElementById(
-    "results"
-  ).innerHTML = `
-
-    <div class="card">
-
-      <h2>Processing...</h2>
-
-      <p class="loading">
-
-        Extracting RdSAP data
-
-      </p>
-
-    </div>
-
-  `;
 
   try{
 
@@ -170,27 +108,25 @@ async function uploadDocument(){
         data:arrayBuffer
       }).promise;
 
-    let extractedText = "";
+    let text = "";
 
-    for(let page = 1;
-        page <= pdf.numPages;
-        page++){
+    for(let i=1;i<=pdf.numPages;i++){
 
-      const currentPage =
-        await pdf.getPage(page);
+      const page =
+        await pdf.getPage(i);
 
-      const textContent =
-        await currentPage.getTextContent();
+      const content =
+        await page.getTextContent();
 
-      const strings =
-        textContent.items.map(
-          item => item.str
-        );
-
-      extractedText +=
-        strings.join(" ");
+      text += content.items
+        .map(item => item.str)
+        .join(" ");
 
     }
+
+    console.log(text);
+
+    alert(text.substring(0,3000));
 
     const response =
       await fetch(
@@ -203,7 +139,7 @@ async function uploadDocument(){
           },
 
           body:JSON.stringify({
-            text:extractedText
+            text:text
           })
         }
       );
@@ -211,147 +147,55 @@ async function uploadDocument(){
     const data =
       await response.json();
 
-    document.title =
-      data.address ||
-      "IOE Assessment";
+    document.getElementById("address").innerHTML =
+      "<b>Address:</b> " + data.address;
 
-    document.getElementById(
-      "results"
-    ).innerHTML = `
+    document.getElementById("floor").innerHTML =
+      "<b>Total Floor Area:</b> " +
+      data.totalFloorArea + " m²";
 
-      <div class="card">
+    document.getElementById("heat").innerHTML =
+      "<b>Heat Loss Perimeter:</b> " +
+      data.heatLossPerimeter + " m";
 
-        <h2>Property Details</h2>
+    document.getElementById("room").innerHTML =
+      "<b>Room Height:</b> " +
+      data.roomHeight + " m";
 
-        <p><strong>Address:</strong>
-        ${data.address || "Not Found"}</p>
+    document.getElementById("roof").innerHTML =
+      "<b>Roof Area:</b> " +
+      data.roofArea + " m²";
 
-        <p><strong>Total Floor Area:</strong>
-        ${data.totalFloorArea || "0"} m²</p>
+    document.getElementById("window").innerHTML =
+      "<b>Window Area:</b> " +
+      data.windowArea + " m²";
 
-        <p><strong>Heat Loss Perimeter:</strong>
-        ${data.heatLossPerimeter || "0"} m</p>
+    document.getElementById("fuel").innerHTML =
+      "<b>Current Fuel Cost:</b> £" +
+      data.fuelCost;
 
-        <p><strong>Room Height:</strong>
-        ${data.roomHeight || "0"} m</p>
+    document.getElementById("carbon").innerHTML =
+      "<b>Current Carbon:</b> " +
+      data.carbon + " T";
 
-        <p><strong>Roof Area:</strong>
-        ${data.roofArea || "0"} m²</p>
-
-        <p><strong>Window Area:</strong>
-        ${data.windowArea || "0"} m²</p>
-
-        <p><strong>Current Fuel Cost:</strong>
-        £${data.currentFuelCost || "0"}</p>
-
-        <p><strong>Current Carbon:</strong>
-        ${data.currentCarbon || "0"} T</p>
-
-        <p><strong>Current Rating:</strong>
-        ${data.currentRating || "-"}</p>
-
-      </div>
-
-      <div class="card">
-
-        <h2>Select Measure</h2>
-
-        <select id="measureSelect">
-
-          ${
-            data.measures.map(
-              (measure,index)=>`
-
-              <option value="${index}">
-
-                ${measure.name}
-
-              </option>
-
-            `
-            ).join("")
-          }
-
-        </select>
-
-        <button onclick='showMeasure(${JSON.stringify(data.measures)})'>
-
-          Calculate
-
-        </button>
-
-      </div>
-
-      <div id="measureResults"></div>
-
-    `;
+    document.getElementById("rating").innerHTML =
+      "<b>Current Rating:</b> " +
+      data.currentRating;
 
   }
 
   catch(error){
 
-    document.getElementById(
-      "results"
-    ).innerHTML = `
+    document.getElementById("results").innerHTML =
+      "<h2>Backend Error</h2><p>" +
+      error +
+      "</p>";
 
-      <div class="card">
-
-        <h2>Backend Error</h2>
-
-        <p class="error">
-
-          ${error}
-
-        </p>
-
-      </div>
-
-    `;
   }
 
-}
-
-function showMeasure(measures){
-
-  const index =
-    document.getElementById(
-      "measureSelect"
-    ).value;
-
-  const measure =
-    measures[index];
-
-  document.getElementById(
-    "measureResults"
-  ).innerHTML = `
-
-    <div class="card">
-
-      <h2>
-      ${measure.name}
-      </h2>
-
-      <p>
-      <strong>Total Installation Cost:</strong>
-      £${measure.cost}
-      </p>
-
-      <p>
-      <strong>${measure.risk}</strong>
-      </p>
-
-      <p>
-      <strong>Additional Information Required:</strong>
-      ${measure.additional.join(", ")}
-      </p>
-
-    </div>
-
-  `;
 }
 
 </script>
 
 </body>
-
 </html>
