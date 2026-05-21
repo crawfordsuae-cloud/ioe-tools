@@ -8,7 +8,7 @@
 <meta name="viewport"
       content="width=device-width, initial-scale=1.0">
 
-<title>IOE AI Retrofit Platform</title>
+<title>IOE Retrofit Platform</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet">
@@ -125,6 +125,12 @@ body{
   margin-top:20px;
 }
 
+.additional{
+  margin-top:10px;
+  color:#93c5fd;
+  font-size:14px;
+}
+
 </style>
 
 </head>
@@ -135,10 +141,10 @@ body{
 
   <div class="hero">
 
-    <h1>IOE AI Retrofit Platform</h1>
+    <h1>IOE Retrofit Platform</h1>
 
     <p>
-      EPC • RdSAP • PAS2035 • Retrofit Calculations
+      RdSAP • PAS2035 • Retrofit Assessment
     </p>
 
   </div>
@@ -173,170 +179,250 @@ body{
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+
 <script>
 
 let totalCost = 0;
-let totalSap = 0;
-let totalCarbon = 0;
 
 async function processDocument(){
 
-  document.getElementById("dashboard")
-    .innerHTML = `
-      <div class="card">
-        <h2>Processing...</h2>
-        <p>Loading property data...</p>
-      </div>
-    `;
+  const file =
+    document.getElementById(
+      "fileInput"
+    ).files[0];
 
-  // TEST API
-  await fetch(
+  if(!file){
+
+    alert("Please select a file");
+
+    return;
+  }
+
+  document.getElementById(
+    "dashboard"
+  ).innerHTML = `
+
+    <div class="card">
+
+      <h2>Processing...</h2>
+
+      <p>
+        Extracting RdSAP data
+      </p>
+
+    </div>
+
+  `;
+
+  let text = "";
+
+  // PDF
+  if(file.type === "application/pdf"){
+
+    const arrayBuffer =
+      await file.arrayBuffer();
+
+    const pdf =
+      await pdfjsLib.getDocument({
+        data: arrayBuffer
+      }).promise;
+
+    for(let pageNum = 1;
+        pageNum <= pdf.numPages;
+        pageNum++){
+
+      const page =
+        await pdf.getPage(pageNum);
+
+      const content =
+        await page.getTextContent();
+
+      const strings =
+        content.items.map(
+          item => item.str
+        );
+
+      text += strings.join(" ");
+    }
+
+  }
+
+  // DOCX
+  else{
+
+    const arrayBuffer =
+      await file.arrayBuffer();
+
+    const result =
+      await mammoth.extractRawText({
+        arrayBuffer: arrayBuffer
+      });
+
+    text = result.value;
+  }
+
+  // SEND TO GOOGLE SCRIPT
+
+  const response = await fetch(
     "https://script.google.com/macros/s/AKfycbwAW8iYFB5AGTr351Sl0O9067vVPxxM_4p3oyGbg3mbc8m07YXk44PSEJCfz5-CeKc6/exec",
     {
-      mode:"no-cors"
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+        text:text
+      })
     }
   );
 
-  // SHOW RESULTS
-  document.getElementById("dashboard")
-    .innerHTML = `
+  const data =
+    await response.json();
 
-      <div class="card">
+  document.title =
+    data.address;
 
-        <h2>Property Details</h2>
+  let measuresHtml = "";
 
-        <p>
-          Address:
-          21 Example Street
-        </p>
+  data.measures.forEach(measure => {
 
-        <p>
-          Floor Area:
-          92 m²
-        </p>
+    measuresHtml += `
 
-        <p>
-          EPC Rating:
-          E
-        </p>
+      <div class="measure">
 
-        <p>
-          Walls:
-          Solid brick walls
-        </p>
+        <input type="checkbox"
+               onchange="
+                 calculateMeasure(
+                   ${measure.cost}
+                 )
+               ">
 
-        <p>
-          Roof:
-          Loft insulation required
-        </p>
+        <label>
 
-        <p>
-          Heating:
-          Gas boiler
-        </p>
+          ${measure.name}
 
-      </div>
+          (£${Number(measure.cost).toLocaleString()})
 
-      <div class="card">
+        </label>
 
-        <h2>Recommended Measures</h2>
+        <div class="additional">
 
-        <div class="measure">
+          Risk:
+          ${measure.risk}
 
-          <input type="checkbox"
-                 onchange="
-                   calculateMeasure(
-                     1200,
-                     8,
-                     0.4
-                   )
-                 ">
+          <br><br>
 
-          <label>
-            Loft Insulation (£1,200)
-          </label>
+          Additional Information Required:
 
-        </div>
+          <br>
 
-        <div class="measure">
-
-          <input type="checkbox"
-                 onchange="
-                   calculateMeasure(
-                     6500,
-                     14,
-                     1.8
-                   )
-                 ">
-
-          <label>
-            Solar PV (£6,500)
-          </label>
-
-        </div>
-
-        <div class="measure">
-
-          <input type="checkbox"
-                 onchange="
-                   calculateMeasure(
-                     11000,
-                     20,
-                     2.6
-                   )
-                 ">
-
-          <label>
-            Air Source Heat Pump (£11,000)
-          </label>
-
-        </div>
-
-      </div>
-
-      <div class="card">
-
-        <h2>Retrofit Calculation</h2>
-
-        <div id="calcResults">
-
-          Select measures to calculate.
+          ${measure.additional.join(", ")}
 
         </div>
 
       </div>
 
     `;
+  });
+
+  document.getElementById(
+    "dashboard"
+  ).innerHTML = `
+
+    <div class="card">
+
+      <h2>Property Information</h2>
+
+      <p>
+        Address:
+        ${data.address}
+      </p>
+
+      <p>
+        Total Floor Area:
+        ${data.totalFloorArea}
+      </p>
+
+      <p>
+        Heat Loss Perimeter:
+        ${data.heatLossPerimeter}
+      </p>
+
+      <p>
+        Roof Area:
+        ${data.roofArea}
+      </p>
+
+      <p>
+        Window Area:
+        ${data.windowArea}
+      </p>
+
+      <p>
+        Room Height:
+        ${data.roomHeight}
+      </p>
+
+      <p>
+        Party Wall Perimeter:
+        ${data.partyWallPerimeter}
+      </p>
+
+      <p>
+        Flat Roof Area:
+        ${data.flatRoofArea}
+      </p>
+
+      <p>
+        Number Of Doors:
+        ${data.numberDoors}
+      </p>
+
+      <p>
+        Current Rating:
+        ${data.currentRating}
+      </p>
+
+    </div>
+
+    <div class="card">
+
+      <h2>Recommended Measures</h2>
+
+      ${measuresHtml}
+
+    </div>
+
+    <div class="card">
+
+      <h2>Total Installation Cost</h2>
+
+      <div id="calcResults">
+
+        £0
+
+      </div>
+
+    </div>
+
+  `;
 }
 
-function calculateMeasure(
-  cost,
-  sap,
-  carbon
-){
+function calculateMeasure(cost){
 
-  totalCost += cost;
-  totalSap += sap;
-  totalCarbon += carbon;
+  totalCost += Number(cost);
 
   document.getElementById(
     "calcResults"
   ).innerHTML = `
 
-    <p>
-      SAP Improvement:
-      +${totalSap}
-    </p>
-
-    <p>
-      Carbon Reduction:
-      ${totalCarbon.toFixed(1)}
-      tonnes CO₂
-    </p>
-
     <div class="total">
 
-      Total Cost:
       £${totalCost.toLocaleString()}
 
     </div>
